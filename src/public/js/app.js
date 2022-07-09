@@ -6,9 +6,13 @@ const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const camerasSelect = document.getElementById("cameras");
 
+const call = document.getElementById("call");
+call.hidden = true;
+
 let myStream;
 let muted = false;
 let cameraOff = false;
+let roomName;
 
 async function getCameras() {
   try {
@@ -19,7 +23,7 @@ async function getCameras() {
       const option = document.createElement("option");
       option.value = camera.getDeviceId;
       option.innerText = camera.label;
-      if(currentCamera.label == camera.label){
+      if (currentCamera.label == camera.label) {
         option.selected = true;
       }
       camerasSelect.appendChild(option);
@@ -32,13 +36,11 @@ async function getCameras() {
 async function getMedia(deviceId) {
   const initConstraints = { audio: true, video: { facingMode: "user" } }; //browser에서 정한 video로 설정
   const cameraConstraints = { audio: true, video: { deviceId: deviceId } }; //browser에서 정한 video로 설정
-  
+
   try {
-    myStream = await navigator.mediaDevices.getUserMedia(
-      deviceId? cameraConstraints : initConstraints
-    );
+    myStream = await navigator.mediaDevices.getUserMedia(deviceId ? cameraConstraints : initConstraints);
     myFace.srcObject = myStream;
-    if(!deviceId){
+    if (!deviceId) {
       await getCameras();
     }
     /* 스트림 사용 */
@@ -47,8 +49,6 @@ async function getMedia(deviceId) {
     /* 오류 처리 */
   }
 }
-
-getMedia();
 
 function handleMuteClick() {
   myStream.getAudioTracks().forEach((track) => (track.enabled = !track.enabled));
@@ -74,9 +74,36 @@ function handleCameraClick() {
 }
 
 function handleCameraChange() {
-  await getMedia(camerasSelect.value);
+  getMedia(camerasSelect.value);
 }
 
 muteBtn.addEventListener("click", handleMuteClick);
 cameraBtn.addEventListener("click", handleCameraClick);
 camerasSelect.addEventListener("input", handleCameraChange);
+
+// Welcome Form (join a room)
+
+const welcome = document.getElementById("welcome");
+const welcomeForm = welcome.querySelector("#welcome form");
+
+function startMedia() {
+  welcome.hidden = true;
+  call.hidden = false;
+  getMedia();
+}
+
+function handleWelcomeSubmit(event) {
+  event.preventDefault();
+  const input = welcomeForm.querySelector("input");
+  socket.emit("join_room", input.value, startMedia);
+  roomName = input.value;
+  input.value = "";
+}
+
+welcomeForm.addEventListener("submit", handleWelcomeSubmit);
+
+// Socket Code
+
+socket.on("welcome", () => {
+  console.log("someone join");
+});
