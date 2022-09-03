@@ -154,7 +154,7 @@ function makeConnection() {
     ],
   });
   myPeerConnection.addEventListener("icecandidate", handleIce);
-  myPeerConnection.addEventListener("addstream", handleAddStream);
+  myPeerConnection.addEventListener("track", handleTrack);
   myStream
     .getTracks() //
     .forEach((track) => myPeerConnection.addTrack(track, myStream));
@@ -165,10 +165,8 @@ function handleIce(/** @type {RTCPeerConnectionIceEvent} */ data) {
   socket.emit("ice", data.candidate, roomName);
 }
 
-function handleAddStream(data) {
-  const peersFace = document.getElementById("peersFace");
-  console.log("got an stream from my peer");
-  console.log("My steam", myStream);
-  console.log("Peer's stream", data.stream);
-  peersFace.srcObject = data.stream;
+function handleTrack(data) {
+  console.log("handle track");
+  const peerFace = document.getElementById("peersFace");
+  peerFace.srcObject = data.streams[0];
 }
